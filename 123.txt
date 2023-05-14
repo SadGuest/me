@@ -1,0 +1,174 @@
+import pygame
+import random
+
+# Инициализация Pygame
+pygame.init()
+
+# Определение размеров экрана и цвета фона
+screen_width, screen_height = 800, 600
+background_color = (255, 255, 255)
+
+# Создание экрана
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Змейка")
+
+# Определение размеров змейки и яблок
+snake_size = 20
+apple_size = 20
+
+# Определение начальной позиции змейки
+snake_x, snake_y = screen_width // 2, screen_height // 2
+
+# Создание списка сегментов змейки
+snake_segments = [(snake_x, snake_y)]
+
+# Создание списка яблок
+apples = []
+for i in range(10):
+    apple_x, apple_y = random.randint(0, screen_width - apple_size), random.randint(0, screen_height - apple_size)
+    while any(abs(apple_x - apple[0]) < (snake_size + apple_size) / 2 and abs(apple_y - apple[1]) < (snake_size + apple_size) / 2 for apple in apples):
+        apple_x, apple_y = random.randint(0, screen_width - apple_size), random.randint(0, screen_height - apple_size)
+    apple_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    apples.append((apple_x, apple_y, apple_color))
+
+# Определение скорости змейки и направления движения
+snake_speed = 5
+snake_direction = pygame.math.Vector2(0, 0)
+
+# Определение максимальной длины змейки
+max_snake_length = 10
+
+# Определение цвета змейки
+snake_color = (80, 222, 57)
+
+# Определение длины змейки и скорости изменения длины
+snake_length = 10
+snake_length_delta = 0.1
+apple_growth_rate = 10
+
+# Определение интервала появления новых яблок
+apple_spawn_interval = 1500
+last_apple_spawn_time = pygame.time.get_ticks()
+
+# Определение счетчика
+score = 0
+
+# Функция для отображения закругленного круга
+def draw_rounded_circle(surface, color, center, radius):
+    pygame.draw.circle(surface, color, center, radius)
+
+# Функция для получения радиуса закругления сегмента змейки
+def get_segment_radius(index, max_length, min_radius):
+    if index == 0:
+        return max(snake_size / 2, min_radius)
+    elif index == max_length - 1:
+        return min(snake_size / 4, min_radius)
+    else:
+        t = index / (max_length - 1)
+        return max(snake_size / 2 - (snake_size / 2 - min_radius) * t ** 2, min_radius)
+
+# Функция для отображения надписи "Game Over"
+def show_game_over():
+    font = pygame.font.Font(None, 72)
+    text = font.render("Слышь, ты проебал", True, (255, 0, 0))
+    text_rect = text.get_rect(center=(screen_width // 2, screen_height // 2))
+    screen.blit(text, text_rect)
+    pygame.display.flip()
+
+# Определение счетчика яблок
+font = pygame.font.Font(None, 36)
+score_text = font.render("Сьедено яблок: {}".format(score), True, (0, 0, 0))
+score_rect = score_text.get_rect(center=(screen_width // 2, 50))
+
+# Определение времени, когда произошло столкновение змейки со стеной
+game_over_time = None
+
+# Основной цикл игры
+clock = pygame.time.Clock()
+running = True
+game_over = False
+prev_snake_direction = pygame.math.Vector2(1, 0) # Начальное направление движения змейки
+while running:
+    # Обработка событий
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                apple_growth_rate += 1
+            elif event.key == pygame.K_DOWN:
+                apple_growth_rate -= 1
+                if apple_growth_rate < 1:
+                    apple_growth_rate = 1
+
+    if not game_over:
+        # Проверяем, двигается ли курсор
+        mouse_moving = pygame.mouse.get_rel() != (0, 0)
+
+        if mouse_moving:
+            # Обновляем направление движения змейки на основе положения курсора
+            mouse_pos = pygame.mouse.get_pos()
+            snake_direction = pygame.math.Vector2(mouse_pos[0] - snake_x, mouse_pos[1] - snake_y).normalize()
+        else:
+            # Сохраняем текущее направление движения змейки, если курсор не двигается
+            snake_direction = prev_snake_direction
+
+        # Двигаем змейку в заданном направлении
+        snake_x += snake_speed * snake_direction.x
+        snake_y += snake_speed * snake_direction.y
+
+        # Проверяем столкновение змейки с яблоком, добавляем новые сегменты и удаляем старые
+        for i, apple in enumerate(apples):
+            apple_x, apple_y, apple_color = apple
+            if abs(apple_x - snake_x) < (snake_size + apple_size) / 2 and abs(apple_y - snake_y) < (snake_size + apple_size) / 2:
+                snake_length += apple_growth_rate
+                score += 1
+                apples.pop(i)
+                apple_growth_rate = 1
+                score_text = font.render("Сьедено яблок: {}".format(score), True, (0, 0, 0))
+                break
+        snake_segments.insert(0, (snake_x, snake_y))
+        while len(snake_segments) > snake_length:
+            snake_segments.pop()
+
+        # Проверяем интервал появления новых яблок
+        current_time = pygame.time.get_ticks()
+        if current_time - last_apple_spawn_time > apple_spawn_interval:
+            apple_x, apple_y = random.randint(0, screen_width - apple_size), random.randint(0, screen_height - apple_size)
+            while any(abs(apple_x - apple[0]) < (snake_size + apple_size) / 2 and abs(apple_y - apple[1]) < (snake_size + apple_size) / 2 for apple in apples):
+                apple_x, apple_y = random.randint(0, screen_width - apple_size), random.randint(0, screen_height - apple_size)
+            apple_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            apples.append((apple_x, apple_y, apple_color))
+            last_apple_spawn_time = current_time
+
+        # Проверяем столкновение змейки со стеной
+        if snake_x < snake_size / 2 or snake_x > screen_width - snake_size / 2 or snake_y < snake_size / 2 or snake_y > screen_height - snake_size / 2:
+            game_over = True
+            game_over_time = pygame.time.get_ticks()
+
+        # Сохраняем направление движения змейки
+        prev_snake_direction = snake_direction
+
+    # Отрисовка фона, яблок и змейки, а также счетчика яблок
+    screen.fill(background_color)
+    for apple in apples:
+        apple_x, apple_y, apple_color = apple
+        draw_rounded_circle(screen, apple_color, (apple_x, apple_y), apple_size // 2)
+    for i, segment in enumerate(snake_segments):
+        segment_x, segment_y = segment
+        segment_radius = get_segment_radius(i, len(snake_segments), snake_size / 4)
+        draw_rounded_circle(screen, snake_color, (int(segment_x), int(segment_y)), int(segment_radius))
+    screen.blit(score_text, score_rect)
+
+    # Отображаем надпись "Game Over", если игра окончена
+    if game_over:
+        if pygame.time.get_ticks() - game_over_time > 10000:
+            running = False
+        else:
+            show_game_over()
+
+    pygame.display.flip()
+    clock.tick(60)
+
+# Закрытие окна Pygame
+pygame.quit()
