@@ -1,4 +1,4 @@
-from ursina import Ursina, Sky, color, time
+from ursina import Ursina, Sky, color, time, window, AmbientLight, DirectionalLight, Vec3
 
 from game.core.settings import Settings
 from game.core.game_state import GameState
@@ -22,7 +22,11 @@ class SnakeOpenWorldGame:
         self.settings = Settings()
         self.state = GameState()
 
+        window.color = color.rgb(95, 180, 245)
         Sky(color=color.rgb(120, 220, 255))
+        AmbientLight(color=color.rgba(180, 180, 210, 0.7))
+        self.sun = DirectionalLight(shadows=True, color=color.rgba(255, 245, 230, 0.9))
+        self.sun.look_at(Vec3(1, -1, -0.6))
 
         self.terrain = TerrainSystem(self.settings)
         self.environment = EnvironmentSystem(self.settings, self.terrain)

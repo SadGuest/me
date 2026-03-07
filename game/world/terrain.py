@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional
-import random
+import math
 
-from ursina import Entity, Mesh, color, collider, Vec3
+from ursina import Entity, Mesh, color, Vec3
 
 from game.core.settings import Settings
 
@@ -22,8 +21,11 @@ class TerrainSystem:
         scale = self.settings.terrain_scale
         if pnoise2:
             return pnoise2(x * scale, z * scale, octaves=4, persistence=0.55, lacunarity=2.0)
-        random.seed(int(x * 73856093) ^ int(z * 19349663))
-        return random.uniform(-1, 1) * 0.35
+        return (
+            math.sin(x * scale * 1.7) * 0.45
+            + math.cos(z * scale * 1.3) * 0.35
+            + math.sin((x + z) * scale * 0.7) * 0.2
+        )
 
     def get_height(self, x: float, z: float) -> float:
         n = self._sample_noise(x, z)
