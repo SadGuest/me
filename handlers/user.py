@@ -66,7 +66,7 @@ async def book_start(callback: CallbackQuery, config: Config, bot: Bot):
         await callback.answer("У вас уже есть активная запись", show_alert=True)
         return
 
-    await show_booking_calendar(callback)
+    await show_booking_calendar(callback, config)
 
 
 @router.callback_query(F.data == "sub:check")
@@ -75,13 +75,24 @@ async def check_subscription(callback: CallbackQuery, config: Config, bot: Bot):
         await callback.answer("Подписка пока не найдена", show_alert=True)
         return
     await callback.answer("Подписка подтверждена ✅")
-    await show_booking_calendar(callback)
+    await show_booking_calendar(callback, config)
 
 
-async def show_booking_calendar(callback: CallbackQuery):
+async def show_booking_calendar(callback: CallbackQuery, config: Config | None = None):
     today = date.today()
     end = today + timedelta(days=31)
     open_dates = set(await db.get_open_dates(today.isoformat(), end.isoformat()))
+
+    # Если слоты на ближайший месяц не созданы, сразу сообщаем об этом.
+    if not open_dates:
+        is_admin = bool(config and callback.from_user.id == config.admin_id)
+        await callback.message.edit_text(
+            "<b>Пока нет доступных дат для записи.</b>\n"
+            "Пожалуйста, попробуйте позже или свяжитесь с мастером.",
+            reply_markup=main_menu(is_admin),
+        )
+        return
+
     await callback.message.edit_text(
         "<b>Выберите дату записи</b>",
         reply_markup=calendar_kb(today.year, today.month, "book", open_dates),
@@ -233,4 +244,4 @@ async def cancel_my_booking(callback: CallbackQuery, bot: Bot, config: Config):
 
 @router.callback_query(F.data == "noop")
 async def noop(callback: CallbackQuery):
-    await callback.answer()
+    await callback.answer("Эта кнопка неактивна")
