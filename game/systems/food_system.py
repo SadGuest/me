@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import random
 from dataclasses import dataclass
 
@@ -30,10 +31,11 @@ class FoodPickup(Entity):
         super().__init__(model="sphere", color=spec.tint, position=position, scale=0.6)
         self.spec = spec
         self.base_y = position.y
+        self.seed = random.uniform(0, 1000)
 
     def tick(self) -> None:
         self.rotation_y += 70 * time.dt
-        self.y = self.base_y + 0.35 * (0.5 + random.random() * 0.5)
+        self.y = self.base_y + 0.25 * (1 + math.sin(time.time() * 3.5 + self.seed))
 
 
 class FoodSystem:
@@ -42,10 +44,17 @@ class FoodSystem:
         self.terrain = terrain
         self.effects = effects
         self.food: list[FoodPickup] = []
+        self._food_to_spawn = settings.food_target_count
 
-    def spawn_initial_food(self) -> None:
-        while len(self.food) < self.settings.food_target_count:
+    def begin_spawning(self) -> None:
+        self._food_to_spawn = self.settings.food_target_count
+
+    def spawn_batch(self, batch_size: int) -> bool:
+        count = min(batch_size, self._food_to_spawn)
+        for _ in range(count):
             self._spawn_food()
+        self._food_to_spawn -= count
+        return self._food_to_spawn <= 0
 
     def _roll_kind(self) -> str:
         r = random.random()

@@ -21,6 +21,7 @@ class SnakeOpenWorldGame:
         self.app = Ursina(borderless=False, title="AAA Cartoon Open-World Snake")
         self.settings = Settings()
         self.state = GameState()
+        self.state.is_playing = False
 
         window.color = color.rgb(95, 180, 245)
         Sky(color=color.rgb(120, 220, 255))
@@ -30,17 +31,14 @@ class SnakeOpenWorldGame:
 
         self.terrain = TerrainSystem(self.settings)
         self.environment = EnvironmentSystem(self.settings, self.terrain)
-        self.environment.populate_world()
 
         self.particles = ParticleSystem(max_particles=self.settings.max_particles)
         self.effects = VisualEffects(self.particles)
 
         self.food_system = FoodSystem(self.settings, self.terrain, self.effects)
-        self.food_system.spawn_initial_food()
 
         self.player = PlayerSnake(self.settings, self.terrain, self.state, self.effects)
         self.ai_system = AISystem(self.settings, self.terrain, self.food_system, self.state, self.effects)
-        self.ai_system.spawn_ai_snakes()
 
         self.ability_system = AbilitySystem(self.settings, self.player, self.effects)
         self.combat_system = CombatSystem(self.settings, self.state, self.food_system, self.effects)
@@ -49,10 +47,42 @@ class SnakeOpenWorldGame:
         self.hud = HUD(self.settings, self.state, self.player, self.ability_system)
         self.menus = MenuController(self.state)
 
+        self.loading_stage = "environment"
+        self.environment.begin_population()
+        self.food_system.begin_spawning()
+        self.ai_system.begin_spawning()
+
         self.app.update = self.update
+
+    def _update_loading(self) -> None:
+        if self.loading_stage == "environment":
+            done = self.environment.populate_batch(self.settings.startup_environment_batch)
+            self.menus.show_loading("environment", 33)
+            if done:
+                self.loading_stage = "food"
+            return
+
+        if self.loading_stage == "food":
+            done = self.food_system.spawn_batch(self.settings.startup_food_batch)
+            self.menus.show_loading("food", 66)
+            if done:
+                self.loading_stage = "ai"
+            return
+
+        if self.loading_stage == "ai":
+            done = self.ai_system.spawn_batch(self.settings.startup_ai_batch)
+            self.menus.show_loading("ai snakes", 90)
+            if done:
+                self.loading_stage = "ready"
+                self.menus.show_loading("finishing", 100)
+                self.menus.hide_loading()
+                self.state.is_playing = True
 
     def update(self) -> None:
         if not self.state.is_playing:
+            self._update_loading()
+            self.camera.update(time.dt)
+            self.particles.update(time.dt)
             return
 
         dt = time.dt

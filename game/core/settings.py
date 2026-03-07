@@ -6,7 +6,7 @@ class Settings:
     world_size: int = 600
     terrain_scale: float = 0.02
     terrain_height: float = 40.0
-    terrain_step: int = 4
+    terrain_step: int = 8
 
     max_particles: int = 200
     target_ai_count: int = 8
@@ -24,10 +24,14 @@ class Settings:
     segment_smoothing: float = 8.0
     initial_segments: int = 10
 
-    food_target_count: int = 240
+    food_target_count: int = 170
 
     camera_position_lerp: float = 0.03
     camera_look_lerp: float = 0.05
+
+    startup_environment_batch: int = 35
+    startup_food_batch: int = 35
+    startup_ai_batch: int = 2
 
     ability_cooldowns: dict = field(
         default_factory=lambda: {

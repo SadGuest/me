@@ -24,15 +24,26 @@ class AISystem:
         self.state = state
         self.effects = effects
         self.ai_snakes: list[AISnake] = []
+        self._remaining_to_spawn = settings.target_ai_count
+        self._palette = [color.red, color.orange, color.violet, color.cyan, color.magenta, color.yellow, color.azure]
 
-    def spawn_ai_snakes(self) -> None:
-        palette = [color.red, color.orange, color.violet, color.cyan, color.magenta, color.yellow, color.azure]
+    def begin_spawning(self) -> None:
+        self._remaining_to_spawn = self.settings.target_ai_count
+
+    def spawn_batch(self, batch_size: int) -> bool:
+        count = min(batch_size, self._remaining_to_spawn)
+        for _ in range(count):
+            self._spawn_one()
+        self._remaining_to_spawn -= count
+        return self._remaining_to_spawn <= 0
+
+    def _spawn_one(self) -> None:
         half = self.settings.world_size * 0.45
-        for i in range(self.settings.target_ai_count):
-            x, z = random.uniform(-half, half), random.uniform(-half, half)
-            spawn = Vec3(x, self.terrain.get_height(x, z), z)
-            personality = random.choice(PERSONALITIES)
-            self.ai_snakes.append(AISnake(self.settings, self.terrain, spawn, palette[i % len(palette)], personality))
+        x, z = random.uniform(-half, half), random.uniform(-half, half)
+        spawn = Vec3(x, self.terrain.get_height(x, z), z)
+        personality = random.choice(PERSONALITIES)
+        tint = self._palette[len(self.ai_snakes) % len(self._palette)]
+        self.ai_snakes.append(AISnake(self.settings, self.terrain, spawn, tint, personality))
 
     def update(self, dt: float, player) -> None:
         for ai in self.ai_snakes:
