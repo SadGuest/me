@@ -40,11 +40,11 @@ def calendar_kb(
             is_past = day_date < today
             allowed = allowed_dates is None or date_str in allowed_dates
             if is_past or not allowed:
-                week_row.append(InlineKeyboardButton(text=f"·{day}", callback_data="noop"))
+                week_row.append(InlineKeyboardButton(text=f"❌ {day}", callback_data="noop"))
             else:
                 week_row.append(
                     InlineKeyboardButton(
-                        text=str(day),
+                        text=f"✅ {day}",
                         callback_data=f"cal:{context}:{year}:{month}:{day}",
                     )
                 )

@@ -93,15 +93,11 @@ class Database:
 
     async def get_open_dates(self, start_date: str, end_date: str) -> list[str]:
         query = """
-        SELECT DISTINCT s.date
-        FROM time_slots s
-        JOIN working_days d ON d.date = s.date
-        LEFT JOIN appointments a ON a.slot_id = s.id
-        WHERE s.date BETWEEN ? AND ?
+        SELECT d.date
+        FROM working_days d
+        WHERE d.date BETWEEN ? AND ?
           AND d.is_closed = 0
-          AND s.is_active = 1
-          AND a.id IS NULL
-        ORDER BY s.date
+        ORDER BY d.date
         """
         async with aiosqlite.connect(self.path) as db:
             cur = await db.execute(query, (start_date, end_date))
