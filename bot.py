@@ -3,6 +3,7 @@ from datetime import datetime
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
+from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot_context import db, reminder_scheduler
@@ -29,7 +30,10 @@ async def main() -> None:
 
     await db.init()
 
-    bot = Bot(token=config.bot_token, parse_mode=ParseMode.HTML)
+    bot = Bot(
+        token=config.bot_token,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
     dp = Dispatcher(storage=MemoryStorage())
 
     dp.include_router(user.router)

@@ -64,6 +64,15 @@ class Database:
             )
             await db.commit()
 
+    async def get_day_closed_status(self, date: str) -> bool:
+        async with aiosqlite.connect(self.path) as db:
+            cur = await db.execute(
+                "SELECT is_closed FROM working_days WHERE date = ?",
+                (date,),
+            )
+            row = await cur.fetchone()
+            return bool(row[0]) if row else False
+
     async def add_time_slot(self, date: str, time: str) -> bool:
         async with aiosqlite.connect(self.path) as db:
             await db.execute(

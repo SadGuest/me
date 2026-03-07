@@ -202,8 +202,8 @@ async def toggle_day(callback: CallbackQuery, config: Config):
     _, _, y, m, d = callback.data.split(":")
     selected = date(int(y), int(m), int(d)).isoformat()
     appointments = await db.get_appointments_by_date(selected)
-    closed = len(await db.get_free_slots(selected)) > 0
-    new_status = not closed
+    is_closed = await db.get_day_closed_status(selected)
+    new_status = not is_closed
     await db.set_day_closed(selected, new_status)
 
     if new_status and appointments:
